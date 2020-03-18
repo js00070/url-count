@@ -17,22 +17,15 @@ func GenerateRandStr(n int) string {
 	return string(b)
 }
 
-func GenerateRandStrSlice(n int) []string {
-	ss := make([]string, n)
-	for i := range ss {
-		ss[i] = GenerateRandStr(64)
-	}
-	return ss
-}
-
-func init() {
-	rand.Seed(1024)
-}
-
 // GenerateUrls 随机生成含有n个url的文件,其中有百分之percent的url是从提前生成好的m个url中随机抽取的
 func GenerateUrls(m, n, percent int) string {
 	fileName := fmt.Sprintf("../testdata/urls_%vk_%vk_%vpercent.dat", m/1000, n/1000, percent)
-	file, err := os.Create(fileName)
+	file, err := os.Open(fileName)
+	if err == nil {
+		file.Close()
+		return fileName
+	}
+	file, err = os.Create(fileName)
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +46,6 @@ func GenerateUrls(m, n, percent int) string {
 				panic(err)
 			}
 		}
-
 	}
 	return fileName
 }

@@ -34,11 +34,47 @@ func TestCountTopN(t *testing.T) {
 	}
 }
 
-func BenchmarkCountTop100(b *testing.B) {
-	b.StopTimer()
+func BenchmarkCountTop100WithBufferSize100M(b *testing.B) {
 	filePath := generator.GenerateUrls(10000, 8000000, 10)
-	b.StartTimer()
-	b.ReportAllocs()
-	top100 := CountTopN(filePath, 100, 1024*1024*100) // buffer size 100M
-	b.Logf("len(top100) is %v\n", len(top100))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		top100 := CountTopN(filePath, 100, 1024*1024*100) // buffer size 100M
+		b.Logf("%v, len(top100) is %v\n", i, len(top100))
+	}
+}
+
+func BenchmarkCountTop100WithBufferSize200M(b *testing.B) {
+	filePath := generator.GenerateUrls(10000, 8000000, 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		top100 := CountTopN(filePath, 100, 1024*1024*200) // buffer size 200M
+		b.Logf("%v, len(top100) is %v\n", i, len(top100))
+	}
+}
+
+func BenchmarkCountTop100WithBufferSize500M(b *testing.B) {
+	filePath := generator.GenerateUrls(10000, 8000000, 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		top100 := CountTopN(filePath, 100, 1024*1024*500) // buffer size 500M
+		b.Logf("%v, len(top100) is %v\n", i, len(top100))
+	}
+}
+
+func BenchmarkCountTop100In10GBWithBufferSize500M(b *testing.B) {
+	filePath := generator.GenerateUrls(10000, 160000000, 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		top100 := CountTopN(filePath, 100, 1024*1024*500) // buffer size 500M
+		b.Logf("%v, len(top100) is %v\n", i, len(top100))
+	}
+}
+
+func BenchmarkCountTop100In10GBWithBufferSize1GB(b *testing.B) {
+	filePath := generator.GenerateUrls(10000, 160000000, 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		top100 := CountTopN(filePath, 100, 1024*1024*1024) // buffer size 1GB
+		b.Logf("%v, len(top100) is %v\n", i, len(top100))
+	}
 }

@@ -6,40 +6,47 @@ import (
 	"sort"
 )
 
-type UrlCounter struct {
+// URLCounter counter for a url
+type URLCounter struct {
 	url   []byte
 	count int
 }
 
-type CounterHeap []UrlCounter
+// CounterHeap heap for finding the top n counts
+type CounterHeap []URLCounter
 
+// Less heap method less
 func (h CounterHeap) Less(i, j int) bool {
 	return h[i].count < h[j].count
 }
 
+// Swap heap method swap
 func (h CounterHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
+// Len heap method len
 func (h CounterHeap) Len() int {
 	return len(h)
 }
 
+// Push heap method push
 func (h *CounterHeap) Push(x interface{}) {
-	urlCounter, ok := x.(UrlCounter)
+	URLCounter, ok := x.(URLCounter)
 	if !ok {
 		panic("invalid type")
 	}
-	*h = append(*h, urlCounter)
+	*h = append(*h, URLCounter)
 }
 
+// Pop heap method pop
 func (h *CounterHeap) Pop() interface{} {
 	*h = (*h)[:len(*h)-1]
 	return nil
 }
 
-// FindTopN find top n
-func CountTopN(path string, n int, bufferSize int) []UrlCounter {
+// CountTopN find top n counts
+func CountTopN(path string, n int, bufferSize int) []URLCounter {
 	partitionList := PartitionSort(path, bufferSize) // 128KB
 	sorter := NewMergeSorter(partitionList)
 	defer sorter.Deconstruct()
@@ -48,7 +55,7 @@ func CountTopN(path string, n int, bufferSize int) []UrlCounter {
 	if row == nil {
 		return counterHeap
 	}
-	counter := UrlCounter{
+	counter := URLCounter{
 		url:   row,
 		count: 1,
 	}

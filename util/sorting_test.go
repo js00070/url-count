@@ -3,11 +3,15 @@ package util
 import (
 	"sort"
 	"testing"
+	"url-count/generator"
 )
 
 func TestSort(t *testing.T) {
-	buf := NewBuffer(1024)
-	testStr := []string{"aaa", "aaa", "bbb", "ccc", "aaa", "ddd", "ccc", "bbb", "aaa"}
+	buf := NewBuffer(1024 * 64)
+	testStr := make([]string, 1024)
+	for i := range testStr {
+		testStr[i] = generator.GenerateRandStr(16)
+	}
 	for i := range testStr {
 		buf.AppendString(testStr[i])
 	}

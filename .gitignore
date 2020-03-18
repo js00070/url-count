@@ -1,2 +1,4 @@
 testdata/*.dat
 tmp/*
+util/*.out
+util/*.test

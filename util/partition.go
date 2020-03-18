@@ -14,6 +14,7 @@ type Partition struct {
 	scanner  *bufio.Scanner
 }
 
+// WriteToPartition write a buffer into partiton using sorted indexes
 func WriteToPartition(buf Buffer, idxList []int) Partition {
 	filepath := fmt.Sprintf("../tmp/%v.part", time.Now().UnixNano())
 	fp, err := os.Create(filepath)
@@ -39,10 +40,12 @@ func WriteToPartition(buf Buffer, idxList []int) Partition {
 	}
 }
 
+// GetPath get path of the partition file
 func (p *Partition) GetPath() string {
 	return p.filePath
 }
 
+// NextRow get a row from the partition
 func (p *Partition) NextRow() []byte {
 	if p.scanner.Scan() {
 		return append([]byte{}, p.scanner.Bytes()...)
@@ -50,6 +53,7 @@ func (p *Partition) NextRow() []byte {
 	return nil
 }
 
+// Deconstruct free the resource of the partition
 func (p *Partition) Deconstruct() {
 	p.fp.Close()
 	err := os.Remove(p.filePath)

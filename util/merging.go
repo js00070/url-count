@@ -5,11 +5,13 @@ import (
 	"container/heap"
 )
 
+// RowPtr row data with pointer to the partition
 type RowPtr struct {
 	row          []byte
 	partitionPtr *Partition
 }
 
+// MergeSorter merge the sorted partitions
 type MergeSorter struct {
 	partitionList []Partition
 	heap          []RowPtr
@@ -23,19 +25,23 @@ func (m *MergeSorter) Len() int {
 	return len(m.heap)
 }
 
+// Push heap method push
 func (m *MergeSorter) Push(x interface{}) {
 	panic("should not push")
 }
 
+// Pop heap method pop
 func (m *MergeSorter) Pop() interface{} {
 	m.heap = m.heap[:len(m.heap)-1]
 	return nil
 }
 
+// Swap heap method swap
 func (m *MergeSorter) Swap(i, j int) {
 	m.heap[i], m.heap[j] = m.heap[j], m.heap[i]
 }
 
+// NewMergeSorter create a MergeSorter
 func NewMergeSorter(partitionList []Partition) MergeSorter {
 	merge := MergeSorter{
 		partitionList: partitionList,
@@ -53,6 +59,7 @@ func NewMergeSorter(partitionList []Partition) MergeSorter {
 	return merge
 }
 
+// Next get row from the MergeSorter
 func (m *MergeSorter) Next() []byte {
 	if len(m.heap) == 0 {
 		return nil
@@ -68,6 +75,7 @@ func (m *MergeSorter) Next() []byte {
 	return rowPtr.row
 }
 
+// Deconstruct free the resource of the MergeSorter
 func (m *MergeSorter) Deconstruct() {
 	for i := range m.partitionList {
 		m.partitionList[i].Deconstruct()

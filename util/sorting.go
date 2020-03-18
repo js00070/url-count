@@ -4,24 +4,25 @@ import (
 	"bufio"
 	"bytes"
 	"os"
-	"sort"
 )
 
-// GetSortedIndex 排序
+// GetSortedIndex get sorted index for rows in the buffer
 func GetSortedIndex(buf Buffer) []int {
 	sorted := make([]int, buf.Length())
 	for i := range sorted {
 		sorted[i] = i
 	}
-	sort.Slice(sorted, func(i, j int) bool {
-		b1 := buf.GetRow(sorted[i])
-		b2 := buf.GetRow(sorted[j])
-		return bytes.Compare(b1, b2) < 0
-	})
+	// to achieve best performence on my machine, I set the workNum = 6
+	ParallelSort(sorted, func(x, y int) bool {
+		b1 := buf.GetRow(x)
+		b2 := buf.GetRow(y)
+		return bytes.Compare(b1, b2) <= 0
+	}, 6)
 	return sorted
 }
 
-// PartitionSort 分块排序
+// PartitionSort read the data into the buffer,
+// sort the data, and write the sorted data into partitions
 func PartitionSort(path string, partitionSize int) []Partition {
 	fp, err := os.Open(path)
 	if err != nil {
@@ -33,18 +34,15 @@ func PartitionSort(path string, partitionSize int) []Partition {
 	buf := NewBuffer(partitionSize)
 	partitionList := make([]Partition, 0, 32)
 	for scanner.Scan() {
-		// 可以换成scanner.Bytes()
-		str := scanner.Text()
-		if ok := buf.AppendString(str); !ok {
+		bs := scanner.Bytes()
+		if ok := buf.AppendBytes(bs); !ok {
 			// sort in memory
-			// fmt.Println(buf.Length())
 			sortedIdx := GetSortedIndex(buf)
-			// log.Printf("Write to partition %v\n", len(partitionList))
 			// write to partition
 			par := WriteToPartition(buf, sortedIdx)
 			partitionList = append(partitionList, par)
 			buf.Reset()
-			ok = buf.AppendString(str)
+			ok = buf.AppendBytes(bs)
 			if !ok {
 				panic("too big line")
 			}
