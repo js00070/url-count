@@ -8,8 +8,8 @@ import (
 )
 
 func TestCountTopN(t *testing.T) {
-	filePath := generator.GenerateUrls(200, 100000, 30)
-	topN := CountTopN(filePath, 100000, 1024*128)
+	filePath := generator.GenerateUrls(100, 10000, 20)
+	topN := CountTopN(filePath, 10000, 1024*512)
 	fp, err := os.Open(filePath)
 	if err != nil {
 		t.Fatal(err)
@@ -32,7 +32,7 @@ func TestCountTopN(t *testing.T) {
 		if counter[string(topN[i].url)] != topN[i].count {
 			t.Errorf("%v %v != %v\n", string(topN[i].url), counter[string(topN[i].url)], topN[i].count)
 		}
-		if topN[i].count < prev {
+		if topN[i].count > prev {
 			t.Errorf("%v %v < %v\n", i, topN[i].count, prev)
 		}
 	}

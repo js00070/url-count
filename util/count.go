@@ -72,6 +72,7 @@ func CountTopN(path string, n int, bufferSize int) []URLCounter {
 			} else {
 				if counter.count > counterHeap[0].count {
 					counterHeap[0] = URLCounter{
+						// memory reuse
 						url:   append(counterHeap[0].url[0:0], counter.url...),
 						count: counter.count,
 					}
@@ -81,12 +82,13 @@ func CountTopN(path string, n int, bufferSize int) []URLCounter {
 			if row == nil {
 				break
 			}
+			// memory reuse
 			counter.url = append(counter.url[0:0], row...)
 			counter.count = 1
 		}
 	}
 	sort.Slice(counterHeap, func(i, j int) bool {
-		return counterHeap[i].count < counterHeap[j].count
+		return counterHeap[i].count > counterHeap[j].count
 	})
 	return counterHeap
 }
