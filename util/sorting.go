@@ -31,29 +31,41 @@ func PartitionSort(path string, partitionSize int) []Partition {
 	defer fp.Close()
 	scanner := bufio.NewScanner(fp)
 	scanner.Split(bufio.ScanLines)
-	buf := NewBuffer(partitionSize)
 	partitionList := make([]Partition, 0, 32)
-	for scanner.Scan() {
-		bs := scanner.Bytes()
-		if ok := buf.AppendBytes(bs); !ok {
-			// sort in memory
-			sortedIdx := GetSortedIndex(buf)
-			// write to partition
-			par := WriteToPartition(buf, sortedIdx)
-			partitionList = append(partitionList, par)
-			buf.Reset()
-			ok = buf.AppendBytes(bs)
-			if !ok {
-				panic("too big line")
+
+	sortBuf := NewBuffer(partitionSize)
+	ioBuf := NewBuffer(partitionSize)
+	ioBufReady := make(chan struct{}, 1)
+	sortBufReady := make(chan struct{}, 1)
+	// ioBufReady <- struct{}{}
+	sortBufReady <- struct{}{}
+	go func() {
+		for scanner.Scan() {
+			bs := scanner.Bytes()
+			if ok := ioBuf.AppendBytes(bs); !ok {
+				<-sortBufReady
+				ioBuf, sortBuf = sortBuf, ioBuf
+				ioBufReady <- struct{}{}
+				ioBuf.Reset()
+				ok = ioBuf.AppendBytes(bs)
+				if !ok {
+					panic("too big line")
+				}
 			}
 		}
-	}
-	if buf.Length() != 0 {
-		sortedIdx := GetSortedIndex(buf)
-		// log.Printf("Write to partition %v\n", len(partitionList))
-		// write to partition
-		par := WriteToPartition(buf, sortedIdx)
+		if ioBuf.Length() != 0 {
+			<-sortBufReady
+			ioBuf, sortBuf = sortBuf, ioBuf
+			ioBufReady <- struct{}{}
+		}
+		close(ioBufReady)
+	}()
+
+	for range ioBufReady {
+		sortedIdx := GetSortedIndex(sortBuf)
+		par := WriteToPartition(sortBuf, sortedIdx)
 		partitionList = append(partitionList, par)
+		sortBufReady <- struct{}{}
 	}
 	return partitionList
 }

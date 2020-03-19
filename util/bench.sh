@@ -6,7 +6,9 @@
 
 # go test -bench BenchmarkParallelSort -benchmem -cpuprofile parallel_sort_cpu.out -memprofile parallel_sort_mem.out
 
+go test -bench BenchmarkCountTop100In10GBWithBufferSize300M -benchmem -cpuprofile 10GB_300M_cpu.out -memprofile 10GB_300M_mem.out
+
 # go test -bench BenchmarkCountTop100In10GBWithBufferSize500M -benchmem -cpuprofile 10GB_500M_cpu.out -memprofile 10GB_500M_mem.out
 
-go test -bench BenchmarkCountTop100In10GBWithBufferSize1GB -benchmem -cpuprofile 10GB_1GB_cpu.out -memprofile 10GB_1GB_mem.out
+# go test -bench BenchmarkCountTop100In10GBWithBufferSize1GB -benchmem -cpuprofile 10GB_1GB_cpu.out -memprofile 10GB_1GB_mem.out
 

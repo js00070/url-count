@@ -45,10 +45,11 @@ func (p *Partition) GetPath() string {
 	return p.filePath
 }
 
-// NextRow get a row from the partition
+// NextRow get a row from the partition, the memory of the return bytes will be reused
 func (p *Partition) NextRow() []byte {
 	if p.scanner.Scan() {
-		return append([]byte{}, p.scanner.Bytes()...)
+		// return append(make([]byte, 0, len(p.scanner.Bytes())), p.scanner.Bytes()...)
+		return p.scanner.Bytes()
 	}
 	return nil
 }

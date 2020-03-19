@@ -56,7 +56,7 @@ func CountTopN(path string, n int, bufferSize int) []URLCounter {
 		return counterHeap
 	}
 	counter := URLCounter{
-		url:   row,
+		url:   append(make([]byte, 0, len(row)), row...),
 		count: 1,
 	}
 	for {
@@ -65,17 +65,23 @@ func CountTopN(path string, n int, bufferSize int) []URLCounter {
 			counter.count++
 		} else {
 			if counterHeap.Len() < n {
-				heap.Push(&counterHeap, counter)
+				heap.Push(&counterHeap, URLCounter{
+					url:   append(make([]byte, 0, len(counter.url)), counter.url...),
+					count: counter.count,
+				})
 			} else {
 				if counter.count > counterHeap[0].count {
-					counterHeap[0] = counter
+					counterHeap[0] = URLCounter{
+						url:   append(counterHeap[0].url[0:0], counter.url...),
+						count: counter.count,
+					}
 					heap.Fix(&counterHeap, 0)
 				}
 			}
 			if row == nil {
 				break
 			}
-			counter.url = row
+			counter.url = append(counter.url[0:0], row...)
 			counter.count = 1
 		}
 	}

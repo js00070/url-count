@@ -27,9 +27,13 @@ func TestCountTopN(t *testing.T) {
 			counter[url] = 1
 		}
 	}
+	prev := topN[0].count
 	for i := range topN {
 		if counter[string(topN[i].url)] != topN[i].count {
 			t.Errorf("%v %v != %v\n", string(topN[i].url), counter[string(topN[i].url)], topN[i].count)
+		}
+		if topN[i].count < prev {
+			t.Errorf("%v %v < %v\n", i, topN[i].count, prev)
 		}
 	}
 }
@@ -57,6 +61,15 @@ func BenchmarkCountTop100WithBufferSize500M(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		top100 := CountTopN(filePath, 100, 1024*1024*500) // buffer size 500M
+		b.Logf("%v, len(top100) is %v\n", i, len(top100))
+	}
+}
+
+func BenchmarkCountTop100In10GBWithBufferSize300M(b *testing.B) {
+	filePath := generator.GenerateUrls(10000, 160000000, 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		top100 := CountTopN(filePath, 100, 1024*1024*300) // buffer size 300M
 		b.Logf("%v, len(top100) is %v\n", i, len(top100))
 	}
 }

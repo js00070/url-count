@@ -27,21 +27,18 @@ func TestMergeSort(t *testing.T) {
 	partitionList := PartitionSort(filePath, 512)
 	sorter := NewMergeSorter(partitionList)
 	defer sorter.Deconstruct()
-	rowList := make([][]byte, 0)
-	for {
-		row := sorter.Next()
+	var row []byte
+	for i := range strList {
+		row = sorter.Next()
 		if row == nil {
-			break
+			t.Fatalf("wrong length!\n")
 		}
-		rowList = append(rowList, row)
-	}
-	if len(rowList) != len(strList) {
-		t.Fatalf("length %v != %v", len(rowList), len(strList))
-	}
-	for i := 1; i < len(rowList); i++ {
-		if strList[i] != string(rowList[i]) {
-			t.Errorf("%v: %v != %v\n", i, strList[i], string(rowList[i]))
+		if strList[i] != string(row) {
+			t.Errorf("%v: %v != %v\n", i, strList[i], string(row))
 		}
 	}
-
+	row = sorter.Next()
+	if row != nil {
+		t.Fatalf("wrong length!\n")
+	}
 }

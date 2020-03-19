@@ -15,6 +15,7 @@ type RowPtr struct {
 type MergeSorter struct {
 	partitionList []Partition
 	heap          []RowPtr
+	nextRowBuffer []byte
 }
 
 func (m *MergeSorter) Less(i, j int) bool {
@@ -45,11 +46,12 @@ func (m *MergeSorter) Swap(i, j int) {
 func NewMergeSorter(partitionList []Partition) MergeSorter {
 	merge := MergeSorter{
 		partitionList: partitionList,
+		nextRowBuffer: make([]byte, 128),
 	}
 	for i := range merge.partitionList {
 		if row := merge.partitionList[i].NextRow(); row != nil {
 			rowPtr := RowPtr{
-				row:          row,
+				row:          append(make([]byte, 0, len(row)), row...),
 				partitionPtr: &merge.partitionList[i],
 			}
 			merge.heap = append(merge.heap, rowPtr)
@@ -59,20 +61,21 @@ func NewMergeSorter(partitionList []Partition) MergeSorter {
 	return merge
 }
 
-// Next get row from the MergeSorter
+// Next get row from the MergeSorter, the memory of the return bytes will be reused
 func (m *MergeSorter) Next() []byte {
 	if len(m.heap) == 0 {
 		return nil
 	}
 	rowPtr := m.heap[0]
+	m.nextRowBuffer = append(m.nextRowBuffer[0:0], rowPtr.row...)
 	nextRow := rowPtr.partitionPtr.NextRow()
 	if nextRow == nil {
 		heap.Remove(m, 0)
 	} else {
-		m.heap[0].row = nextRow
+		m.heap[0].row = append(m.heap[0].row[0:0], nextRow...)
 		heap.Fix(m, 0)
 	}
-	return rowPtr.row
+	return m.nextRowBuffer
 }
 
 // Deconstruct free the resource of the MergeSorter
