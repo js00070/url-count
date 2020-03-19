@@ -47,7 +47,7 @@ func (h *CounterHeap) Pop() interface{} {
 
 // CountTopN find top n counts
 func CountTopN(path string, n int, bufferSize int) []URLCounter {
-	partitionList := PartitionSort(path, bufferSize) // 128KB
+	partitionList := PartitionSort(path, bufferSize)
 	sorter := NewMergeSorter(partitionList)
 	defer sorter.Deconstruct()
 	counterHeap := make(CounterHeap, 0, n)

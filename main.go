@@ -16,4 +16,7 @@ func main() {
 	bs2[0] = 99
 	fmt.Println(bs1)
 	fmt.Println(bs2)
+	ch := make(chan int, 15)
+	fmt.Println(len(ch))
+	fmt.Println(cap(ch))
 }

@@ -1,5 +1,7 @@
 package util
 
+import "sync"
+
 // QuickSort quicksort
 func QuickSort(src []int, lessEq func(a, b int) bool) {
 	if len(src) <= 8 { // 长度比较小时采用选择排序
@@ -42,11 +44,15 @@ type partitionWorker struct {
 	inputCh  chan []int
 	outputCh chan partitionResult
 	lessEq   func(a, b int) bool
+	finishCh chan struct{}
 }
 
 func (worker *partitionWorker) init(length int, lessEq func(i, j int) bool) {
-	worker.inputCh = make(chan []int, length/256+1)
-	worker.outputCh = make(chan partitionResult, length/256+1)
+	if cap(worker.inputCh) < length/256+1 {
+		worker.inputCh = make(chan []int, length/256+1)
+		worker.outputCh = make(chan partitionResult, length/256+1)
+		worker.finishCh = make(chan struct{})
+	}
 	worker.lessEq = lessEq
 }
 
@@ -55,36 +61,42 @@ func (worker *partitionWorker) start() {
 }
 
 func (worker *partitionWorker) finish() {
-	close(worker.inputCh)
+	worker.finishCh <- struct{}{}
 }
 
 func (worker *partitionWorker) partitioning() {
 	for {
-		src, ok := <-worker.inputCh
-		if !ok {
+		select {
+		case src := <-worker.inputCh:
+			if len(src) <= 256 {
+				QuickSort(src, worker.lessEq)
+				worker.outputCh <- partitionResult{nil, nil}
+				continue
+			}
+			i := 0
+			j := len(src) - 1
+			tmp := src[0]
+			for i < j {
+				for worker.lessEq(tmp, src[j]) && i < j {
+					j--
+				}
+				src[i] = src[j]
+				for worker.lessEq(src[i], tmp) && i < j {
+					i++
+				}
+				src[j] = src[i]
+			}
+			src[i] = tmp
+			worker.outputCh <- partitionResult{src[0:i], src[i+1:]}
+		case <-worker.finishCh:
 			return
 		}
-		if len(src) <= 256 {
-			QuickSort(src, worker.lessEq)
-			worker.outputCh <- partitionResult{nil, nil}
-			continue
-		}
-		i := 0
-		j := len(src) - 1
-		tmp := src[0]
-		for i < j {
-			for worker.lessEq(tmp, src[j]) && i < j {
-				j--
-			}
-			src[i] = src[j]
-			for worker.lessEq(src[i], tmp) && i < j {
-				i++
-			}
-			src[j] = src[i]
-		}
-		src[i] = tmp
-		worker.outputCh <- partitionResult{src[0:i], src[i+1:]}
 	}
+}
+
+// for memory reuse
+var workerPool = sync.Pool{
+	New: func() interface{} { return partitionWorker{} },
 }
 
 // ParallelSort parallel quicksort
@@ -93,7 +105,10 @@ func ParallelSort(src []int, lessEq func(a, b int) bool, workerNum int) {
 		QuickSort(src, lessEq)
 		return
 	}
-	workers := make([]partitionWorker, workerNum)
+	workers := make([]partitionWorker, 0, workerNum)
+	for i := 0; i < workerNum; i++ {
+		workers = append(workers, workerPool.Get().(partitionWorker))
+	}
 	for i := 0; i < len(workers); i++ {
 		workers[i].init(len(src), lessEq)
 		workers[i].start()
@@ -117,5 +132,6 @@ func ParallelSort(src []int, lessEq func(a, b int) bool, workerNum int) {
 	}
 	for i := 0; i < len(workers); i++ {
 		workers[i].finish()
+		workerPool.Put(workers[i])
 	}
 }

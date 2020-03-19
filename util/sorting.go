@@ -6,9 +6,16 @@ import (
 	"os"
 )
 
-// GetSortedIndex get sorted index for rows in the buffer
+// for memory reuse
+var sorted []int
+
+// GetSortedIndex get sorted index for rows in the buffer, the memory of the return list may be reused(depending on the length of the buffer)
 func GetSortedIndex(buf Buffer) []int {
-	sorted := make([]int, buf.Length())
+	if cap(sorted) < buf.Length() {
+		sorted = make([]int, buf.Length())
+	} else {
+		sorted = sorted[0:buf.Length()]
+	}
 	for i := range sorted {
 		sorted[i] = i
 	}
@@ -66,6 +73,7 @@ func PartitionSort(path string, partitionSize int) []Partition {
 		par := WriteToPartition(sortBuf, sortedIdx)
 		partitionList = append(partitionList, par)
 		sortBufReady <- struct{}{}
+
 	}
 	return partitionList
 }
