@@ -30,8 +30,10 @@ util/sorting.go中PartitionSort函数的流程是这样的：
 
 ## 性能优化
 
+基本功能实现后，又进行了一些优化：
 1. 实现了并行的快速排序, 见parallel_sort.go，实现的思路是将快排中的partition动作抽离出来并行执行
 2. 一开始写的时候比较随意，制造了很多的内存碎片，而golang的GC并不能及时清除，于是就利用pprof把所有能够复用的内存都复用了，不再有巨量的内存碎片产生.
+3. 上面提到的，分出两块buffer让读取磁盘与计算排序并行执行
 
 ## 改进空间
 
@@ -43,6 +45,8 @@ util/sorting.go中PartitionSort函数的流程是这样的：
 ## 测试
 ```bash
 $ cd util
-$ go test -bench BenchmarkCountTop100In10GBWithBufferSize300M -benchmem -cpuprofile 10GB_300M_cpu.out -memprofile 10GB_300M_mem.out  
+$ go test -bench BenchmarkCountTop100In10GBWithBufferSize300M -benchmem -cpuprofile 10GB_300M_cpu.out -memprofile 10GB_300M_mem.out
 ```
-会先随机生成10GB大小的测试文件，然后使用300M大小的两个buffer进行测试
+首次运行时会先随机生成10GB大小的测试文件，然后使用300M大小的两个buffer进行测试。
+
+不算首次运行时的生成过程，在我的机器上测试下来是花了103秒且占用内存始终保持在700多M，而一开始没有进行任何优化时，是需要花大概160多秒而且内存占用极其恐怖(golang GC的问题)
